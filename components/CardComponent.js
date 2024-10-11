@@ -1,34 +1,48 @@
-// components/CardComponent.js
 import { useState } from "react";
-import { Button } from "@/components/button";
-import { BsThreeDotsVertical } from "react-icons/bs";
+import { Button } from "@/components/Button";
+import { BsThreeDotsVertical, BsFillGeoAltFill, BsFillTelephoneFill } from "react-icons/bs";
+import ModalComponent from './ModalComponent'; // Import the modal
 
 const CardComponent = ({ item, handleDelete, handleEdit, generateGoogleMapsLink }) => {
-  const [showMenu, setShowMenu] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   return (
-    <div key={item.id} className="p-4 flex items-center space-x-3 relative">
-      {/* Placeholder for profile picture */}
-      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-        <img
-          src="https://via.placeholder.com/150"
-          alt="Profile"
-          className="rounded-full w-full h-full object-cover"
-        />
+    <div key={item.id} className="p-4 flex flex-col space-y-2 relative bg-gray-50 rounded-3xl">
+      {/* Row for Name, Phone, Maps, and Three Dots */}
+      <div className="flex items-center justify-between">
+        {/* Name on the left */}
+        <p className="text-md font-semibold">{item.name}</p>
+
+        {/* Buttons on the right */}
+        <div className="flex items-center space-x-4">
+          {/* Phone button */}
+          <button
+            className="p-2 bg-gray-200 rounded-full flex items-center justify-center text-black hover:bg-gray-300"
+            onClick={() => window.location.href = `tel:${item.phone}`}
+          >
+            <BsFillTelephoneFill />
+          </button>
+
+          {/* Maps button */}
+          <button
+            className="p-2 bg-gray-200 rounded-full flex items-center justify-center text-black hover:bg-gray-300"
+            onClick={() => window.open(generateGoogleMapsLink(item.address), '_blank')}
+          >
+            <BsFillGeoAltFill />
+          </button>
+
+          {/* Three dots button */}
+          <Button
+            className="p-2 bg-gray-200 rounded-full flex items-center justify-center text-black hover:bg-gray-300"
+            onClick={() => setShowModal(true)}
+          >
+            <BsThreeDotsVertical />
+          </Button>
+        </div>
       </div>
 
-      {/* Contact information */}
-      <div className="flex-grow">
-        <p className="text-md font-semibold">{item.name}</p>
-        <p className="text-gray-600 text-sm">{item.phone}</p>
-        <a
-          href={generateGoogleMapsLink(item.address)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 text-sm hover:underline"
-        >
-          {item.address}
-        </a>
+      {/* Additional Information */}
+      <div>
         <p className="text-gray-500 text-xs">
           <strong>Region:</strong> {item.region}
         </p>
@@ -40,39 +54,15 @@ const CardComponent = ({ item, handleDelete, handleEdit, generateGoogleMapsLink 
         </p>
       </div>
 
-      {/* Three dots button to trigger dropdown */}
-      <div className="relative">
-        <Button
-          className="p-2"
-          onClick={() => setShowMenu(!showMenu)}
-        >
-          <BsThreeDotsVertical />
-        </Button>
-
-        {/* Dropdown menu */}
-        {showMenu && (
-          <div className="absolute right-0 bg-white border rounded shadow-md">
-            <button
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              onClick={() => {
-                setShowMenu(false);
-                handleEdit(item); // Call handleEdit with the item data
-              }}
-            >
-              Edit
-            </button>
-            <button
-              className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-              onClick={() => {
-                setShowMenu(false);
-                handleDelete(item.id); // Call handleDelete with the item ID
-              }}
-            >
-              Delete
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Show Modal */}
+      {showModal && (
+        <ModalComponent
+          item={item}
+          handleDelete={handleDelete}
+          handleEdit={handleEdit}
+          closeModal={() => setShowModal(false)}
+        />
+      )}
     </div>
   );
 };

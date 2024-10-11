@@ -5,7 +5,7 @@ import { db } from "../lib/firebase";
 import CardComponent from "@/components/CardComponent";
 import FormComponent from "@/components/FormComponent";
 import ModalComponent from "@/components/ModalComponent";
-import { Button } from "@/components/button";
+import { Button } from "@/components/Button";
 
 export default function Home() {
   const [data, setData] = useState([]);
