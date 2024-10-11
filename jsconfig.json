@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
+    "baseUrl": ".", // Root of the project
     "paths": {
       "@/components/*": ["components/*"],
       "@/lib/*": ["lib/*"]
     }
-  }
+  },
+  "exclude": ["node_modules", "**/node_modules/*"] // Avoid indexing node_modules
 }

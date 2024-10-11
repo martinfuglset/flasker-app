@@ -6,6 +6,7 @@ import { db } from "../lib/firebase"; // Import Firebase instance
 const CardComponent = ({ item, onClickCard, handleDelete, generateGoogleMapsLink, fetchData }) => {
   const [isHentetToday, setIsHentetToday] = useState(false);
   const [previousSistHentet, setPreviousSistHentet] = useState(null); // Store previous sist_hentet
+  const [mustBePickedUp, setMustBePickedUp] = useState(false); // New state to determine if it should be picked up
 
   // Function to check if sist_hentet is today
   const checkIfHentetToday = () => {
@@ -21,10 +22,25 @@ const CardComponent = ({ item, onClickCard, handleDelete, generateGoogleMapsLink
     );
   };
 
+  // Function to check if item must be picked up (based on interval)
+  const checkIfMustBePickedUp = () => {
+    if (!item.sist_hentet || !item.interval) return false;
+
+    const today = new Date();
+    const hentetDate = new Date(item.sist_hentet);
+
+    // Calculate the difference in days
+    const timeDifference = today.getTime() - hentetDate.getTime();
+    const daysDifference = Math.floor(timeDifference / (1000 * 60 * 60 * 24)); // Convert milliseconds to days
+
+    return daysDifference >= item.interval;
+  };
+
   useEffect(() => {
     setIsHentetToday(checkIfHentetToday());
     setPreviousSistHentet(item.sist_hentet); // Set the initial previous sist_hentet when the component mounts
-  }, [item.sist_hentet]);
+    setMustBePickedUp(checkIfMustBePickedUp()); // Set must be picked up state
+  }, [item.sist_hentet, item.interval]);
 
   // Function to toggle between "Hentet Today" and the previous sist_hentet
   const toggleHentet = async () => {
@@ -67,13 +83,13 @@ const CardComponent = ({ item, onClickCard, handleDelete, generateGoogleMapsLink
   const formatSistHentet = (sist_hentet) => {
     if (!sist_hentet) return 'Not Available'; // Handle null or undefined
     const date = new Date(sist_hentet);
-    return isNaN(date) ? 'Invalid Date' : date.toLocaleString(); // Handle invalid dates
+    return isNaN(date) ? 'Invalid Date' : date.toLocaleDateString(); // Show only the date
   };
 
   return (
     <div
       key={item.id}
-      className="p-4 flex flex-col space-y-2 relative bg-gray-50 rounded-3xl cursor-pointer"
+      className="p-4 flex flex-col space-y-6 relative bg-gray-50 rounded-3xl cursor-pointer"
       onClick={() => onClickCard(item)} // Trigger callback to open the modal
     >
       {/* Row for Name, Phone, and Maps */}
@@ -85,7 +101,7 @@ const CardComponent = ({ item, onClickCard, handleDelete, generateGoogleMapsLink
         <div className="flex items-center space-x-2">
           {/* Phone button */}
           <button
-            className="p-2 rounded-full flex items-center justify-center text-black hover:bg-gray-300 border border-gray-500"
+            className="p-2 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-300 border border-[0.5px] border-gray-500"
             onClick={(e) => {
               e.stopPropagation(); // Prevent modal from opening when this button is clicked
               window.location.href = `tel:${item.phone}`;
@@ -96,7 +112,7 @@ const CardComponent = ({ item, onClickCard, handleDelete, generateGoogleMapsLink
 
           {/* Maps button */}
           <button
-            className="p-2 rounded-full flex items-center justify-center text-black hover:bg-gray-300 border border-gray-500"
+            className="p-2 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-300 border border-[0.5px] border-gray-500"
             onClick={(e) => {
               e.stopPropagation(); // Prevent modal from opening when this button is clicked
               window.open(generateGoogleMapsLink(item.address), '_blank');
@@ -108,18 +124,24 @@ const CardComponent = ({ item, onClickCard, handleDelete, generateGoogleMapsLink
       </div>
 
       {/* Additional Information */}
-      <div>
-        <p className="text-gray-500 text-xs">{item.region}</p>
-        <p className="text-gray-500 text-xs">{item.interval}</p>
-        <p className="text-gray-400 text-xs">
-          <strong>Last Pick-up:</strong> {formatSistHentet(item.sist_hentet)} {/* Safely format sist_hentet */}
-        </p>
-      </div>
+      <div className="flex items-center justify-between mt-4">
+        <div>
+          <p className="text-gray-500 text-xs">{item.region}</p>
+          {/* Conditional styling for "må hentes" and "må ikke hentes" */}
+          <p
+            className={`inline-block text-xs font-medium px-3 py-1 rounded-full ${
+              mustBePickedUp
+                ? 'text-red-600 bg-red-100'  // Red text and light red background for "Må hentes"
+                : 'text-gray-700 bg-gray-100' // Gray text and light gray background for "Må ikke hentes"
+            }`}
+          >
+            {mustBePickedUp ? "Må hentes" : "Må ikke hentes"}
+          </p>
+          <p className="text-gray-400 text-xs">Sist hentet: {formatSistHentet(item.sist_hentet)}</p>
+        </div>
 
-      {/* Hentet/Ikke Hentet Button */}
-      <div className="flex justify-end mt-4">
         <button
-          className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors duration-200 ${
+          className={`px-4 py-2 rounded-full border-[0.5px] text-sm font-medium transition-colors duration-200 ${
             isHentetToday
               ? 'text-green-600 border-green-600' // Green text and border if Hentet
               : 'text-gray-500 border-gray-500'   // Gray text and border if Ikke hentet
