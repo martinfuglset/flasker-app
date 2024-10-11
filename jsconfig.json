@@ -3,8 +3,15 @@
     "baseUrl": ".", // Root of the project
     "paths": {
       "@/components/*": ["components/*"],
-      "@/lib/*": ["lib/*"]
+      "@/lib/*": ["lib/*"],
+      "@/styles/*": ["styles/*"] // Optionally add other directories like styles, if needed
     }
   },
-  "exclude": ["node_modules", "**/node_modules/*"] // Avoid indexing node_modules
+  "exclude": [
+    "node_modules", // Exclude node_modules from being included in the project
+    "**/node_modules/*", 
+    ".next", // If using Next.js, exclude the build output
+    "dist", // Exclude build directories (for projects using dist)
+    "out" // Exclude other output directories, if applicable
+  ]
 }

@@ -7,7 +7,7 @@ const ModalComponent = ({ item, showModal, handleDelete, handleEdit, closeModal 
     address: '',
     region: '',
     interval: '',
-    sist_hentet: '',
+    sist_hentet: '', // Added sist_hentet field
   });
 
   useEffect(() => {
@@ -19,7 +19,7 @@ const ModalComponent = ({ item, showModal, handleDelete, handleEdit, closeModal 
         address: item.address || '',
         region: item.region || '',
         interval: item.interval || '',
-        sist_hentet: item.sist_hentet || '',
+        sist_hentet: item.sist_hentet ? item.sist_hentet.split('T')[0] : '', // Ensure date is in YYYY-MM-DD format
       });
     } else {
       // Reset the form data when no item is selected
@@ -104,6 +104,16 @@ const ModalComponent = ({ item, showModal, handleDelete, handleEdit, closeModal 
               type="text"
               name="interval"
               value={formData.interval}
+              onChange={handleInputChange}
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Last Picked Up Date</label>
+            <input
+              type="date"
+              name="sist_hentet"
+              value={formData.sist_hentet}
               onChange={handleInputChange}
               className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
             />

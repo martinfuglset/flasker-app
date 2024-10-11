@@ -1,87 +1,88 @@
-// components/FormComponent.js
-import { useState } from "react";
-import { Input } from "@/components/Input";
-import { Button } from "@/components/Button";
+import { useState } from 'react';
 
-const FormComponent = ({ handleSubmit }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    address: "",
-    phone: "",
-    region: "",
-    interval: "",
-  });
+const FormComponent = ({ handleSubmit, initialData }) => {
+  const [name, setName] = useState(initialData.name || '');
+  const [address, setAddress] = useState(initialData.address || '');
+  const [phone, setPhone] = useState(initialData.phone || '');
+  const [region, setRegion] = useState(initialData.region || '');
+  const [interval, setInterval] = useState(initialData.interval || 1);
+  const [sistHentet, setSistHentet] = useState(
+    initialData.sist_hentet
+      ? new Date(initialData.sist_hentet).toISOString().substr(0, 10)
+      : ''
+  );
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    handleSubmit(e, {
+      name,
+      address,
+      phone,
+      region,
+      interval,
+      sist_hentet: new Date(sistHentet), // Convert the selected date to Date object
+    });
   };
 
   return (
-    <form onSubmit={(e) => handleSubmit(e, formData)} className="grid gap-4">
+    <form onSubmit={handleFormSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">Name:</label>
-        <Input
+        <label>Name</label>
+        <input
           type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-          className="w-full"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="border p-2 rounded w-full"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Address:</label>
-        <Input
+        <label>Address</label>
+        <input
           type="text"
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-          required
-          className="w-full"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          className="border p-2 rounded w-full"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Phone:</label>
-        <Input
+        <label>Phone</label>
+        <input
           type="text"
-          name="phone"
-          value={formData.phone}
-          onChange={handleChange}
-          required
-          className="w-full"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="border p-2 rounded w-full"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Region:</label>
-        <Input
+        <label>Region</label>
+        <input
           type="text"
-          name="region"
-          value={formData.region}
-          onChange={handleChange}
-          required
-          className="w-full"
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+          className="border p-2 rounded w-full"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Interval:</label>
-        <Input
+        <label>Interval (days)</label>
+        <input
           type="number"
-          name="interval"
-          value={formData.interval}
-          onChange={handleChange}
-          required
-          className="w-full"
+          value={interval}
+          onChange={(e) => setInterval(e.target.value)}
+          className="border p-2 rounded w-full"
         />
       </div>
-      <div className="flex justify-between items-center">
-        <Button type="submit" className="bg-black text-white">
-          Submit
-        </Button>
+      <div>
+        <label>Last Picked Up Date</label>
+        <input
+          type="date"
+          value={sistHentet}
+          onChange={(e) => setSistHentet(e.target.value)}
+          className="border p-2 rounded w-full"
+        />
       </div>
+      <button type="submit" className="bg-blue-500 text-white p-2 rounded">
+        Save Changes
+      </button>
     </form>
   );
 };

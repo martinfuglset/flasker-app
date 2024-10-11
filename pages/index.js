@@ -25,17 +25,18 @@ export default function Home() {
       const fetchedData = querySnapshot.docs.map((doc) => {
         const docData = doc.data();
         if (docData.sist_hentet && docData.sist_hentet.seconds) {
-          docData.sist_hentet = new Date(docData.sist_hentet.seconds * 1000).toLocaleString();
+          docData.sist_hentet = new Date(docData.sist_hentet.seconds * 1000).toISOString().split('T')[0]; // Ensure consistent YYYY-MM-DD format
         }
         return { id: doc.id, ...docData };
       });
-
+  
       setData(fetchedData);
       setFilteredData(fetchedData); // Initialize the filtered data
     } catch (error) {
       console.error("Error fetching Firestore data:", error);
     }
   };
+  
 
   // Fetch data on component mount
   useEffect(() => {
@@ -79,6 +80,7 @@ export default function Home() {
     e.preventDefault();
     try {
       if (isEditing && currentItem) {
+        // Update an existing submission
         const docRef = doc(db, "submissions", currentItem.id);
         await updateDoc(docRef, {
           name: formData.name,
@@ -86,26 +88,28 @@ export default function Home() {
           phone: formData.phone,
           region: formData.region,
           interval: parseInt(formData.interval),
-          sist_hentet: new Date(),
+          sist_hentet: formData.sist_hentet, // Update the last picked up date
         });
       } else {
+        // Add a new submission
         await addDoc(collection(db, "submissions"), {
           name: formData.name,
           address: formData.address,
           phone: formData.phone,
           region: formData.region,
           interval: parseInt(formData.interval),
-          sist_hentet: new Date(),
+          sist_hentet: formData.sist_hentet, // Set the last picked up date
         });
       }
-
+  
       setShowModal(false); // Close the modal after submission
       setIsEditing(false);
-      fetchData();  // Refresh data after submission
+      fetchData(); // Refresh data after submission
     } catch (error) {
       console.error("Error saving document:", error.message);
     }
   };
+  
 
   const handleDelete = async (id) => {
     try {
@@ -127,7 +131,7 @@ export default function Home() {
           phone: formData.phone,
           region: formData.region,
           interval: parseInt(formData.interval),
-          sist_hentet: new Date(),
+          sist_hentet: formData.sist_hentet ? new Date(formData.sist_hentet) : null, // Convert string to Date
         });
         setShowModal(false); // Close modal after editing
         fetchData(); // Refresh the data
@@ -136,6 +140,7 @@ export default function Home() {
       }
     }
   };
+  
 
   const handleCardClick = (item) => {
     setCurrentItem(item);  // Set the current item to be edited
