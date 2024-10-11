@@ -11,13 +11,13 @@ const CardComponent = ({ item, handleDelete, handleEdit, generateGoogleMapsLink 
       {/* Row for Name, Phone, Maps, and Three Dots */}
       <div className="flex items-center justify-between">
         {/* Name on the left */}
-        <p className="text-md font-semibold">{item.name}</p>
+        <p className="text-md">{item.name}</p>
 
         {/* Buttons on the right */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
           {/* Phone button */}
           <button
-            className="p-2 bg-gray-200 rounded-full flex items-center justify-center text-black hover:bg-gray-300"
+            className="p-2 rounded-full flex items-center justify-center text-black hover:bg-gray-300 border border-gray-500"
             onClick={() => window.location.href = `tel:${item.phone}`}
           >
             <BsFillTelephoneFill />
@@ -25,7 +25,7 @@ const CardComponent = ({ item, handleDelete, handleEdit, generateGoogleMapsLink 
 
           {/* Maps button */}
           <button
-            className="p-2 bg-gray-200 rounded-full flex items-center justify-center text-black hover:bg-gray-300"
+            className="p-2 rounded-full flex items-center justify-center text-black hover:bg-gray-300 border border-gray-500"
             onClick={() => window.open(generateGoogleMapsLink(item.address), '_blank')}
           >
             <BsFillGeoAltFill />
@@ -33,7 +33,7 @@ const CardComponent = ({ item, handleDelete, handleEdit, generateGoogleMapsLink 
 
           {/* Three dots button */}
           <Button
-            className="p-2 bg-gray-200 rounded-full flex items-center justify-center text-black hover:bg-gray-300"
+            className="p-1 bg-gray-50 rounded-full flex items-center justify-center text-black hover:bg-gray-300"
             onClick={() => setShowModal(true)}
           >
             <BsThreeDotsVertical />
@@ -44,10 +44,10 @@ const CardComponent = ({ item, handleDelete, handleEdit, generateGoogleMapsLink 
       {/* Additional Information */}
       <div>
         <p className="text-gray-500 text-xs">
-          <strong>Region:</strong> {item.region}
+          {item.region}
         </p>
         <p className="text-gray-500 text-xs">
-          <strong>Interval:</strong> {item.interval} days
+          {item.interval}
         </p>
         <p className="text-gray-400 text-xs">
           <strong>Last Pick-up:</strong> {item.sist_hentet}

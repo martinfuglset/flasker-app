@@ -133,7 +133,7 @@ export default function Home() {
   };
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="max-w-[390px] mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">Flasker</h1>
       {error && <p className="text-red-500">{error}</p>}
       {success && <p className="text-green-500">{success}</p>}
@@ -147,13 +147,13 @@ export default function Home() {
             setCurrentItem(null);
             setShowModal(true);
           }} 
-          className="bg-black text-white">
+          className="bg-white text-black border border-black">
           +
         </Button>
 
         <Button 
           onClick={() => setShowFilterSortModal(true)} 
-          className="bg-gray-200 text-black">
+          className="bg-white text-black border border-black">
           Filter and Sort
         </Button>
       </div>
