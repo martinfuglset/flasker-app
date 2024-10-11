@@ -5,15 +5,18 @@ import { db } from "../lib/firebase";
 import CardComponent from "@/components/CardComponent";
 import FormComponent from "@/components/FormComponent";
 import ModalComponent from "@/components/ModalComponent";
+import FilterSortModal from "@/components/FilterSortModal"; // Ensure this path is correct
 import { Button } from "@/components/Button";
 
 export default function Home() {
   const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]); // State for filtered/sorted data
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);  // New state to track editing
-  const [currentItem, setCurrentItem] = useState(null);  // New state to store the card being edited
+  const [showFilterSortModal, setShowFilterSortModal] = useState(false); // State for the filter/sort modal
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentItem, setCurrentItem] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,13 +30,9 @@ export default function Home() {
           return { id: doc.id, ...docData };
         });
 
-        const sortedData = fetchedData.sort((a, b) => {
-          const nameA = a.name.split(" ")[0].toLowerCase();
-          const nameB = b.name.split(" ")[0].toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-
-        setData(sortedData);
+        // Initialize filteredData with fetched data
+        setData(fetchedData);
+        setFilteredData(fetchedData);
       } catch (error) {
         console.error("Error fetching Firestore data:", error);
         setError("Error fetching data from Firestore. Check console for details.");
@@ -43,12 +42,33 @@ export default function Home() {
     fetchData();
   }, []);
 
+  const handleFilterAndSort = (filterName, sortOrder) => {
+    let updatedData = [...data];
+
+    // Filter by name
+    if (filterName) {
+      updatedData = updatedData.filter(item => item.name.toLowerCase().includes(filterName.toLowerCase()));
+    }
+
+    // Sort data based on the selected order
+    updatedData.sort((a, b) => {
+      const nameA = a.name.toLowerCase();
+      const nameB = b.name.toLowerCase();
+      if (sortOrder === 'asc') {
+        return nameA.localeCompare(nameB);
+      } else {
+        return nameB.localeCompare(nameA);
+      }
+    });
+
+    setFilteredData(updatedData); // Update the filtered data
+  };
+
   // Handle form submission for adding or updating
   const handleSubmit = async (e, formData) => {
     e.preventDefault();
     try {
       if (isEditing && currentItem) {
-        // Update existing document
         const docRef = doc(db, "submissions", currentItem.id);
         await updateDoc(docRef, {
           name: formData.name,
@@ -60,7 +80,6 @@ export default function Home() {
         });
         setSuccess("Submission updated successfully!");
       } else {
-        // Add new document
         await addDoc(collection(db, "submissions"), {
           name: formData.name,
           address: formData.address,
@@ -72,7 +91,7 @@ export default function Home() {
         setSuccess("New submission added successfully!");
       }
 
-      setShowModal(false);
+      setShowModal(false); // Close the modal after submission
       setIsEditing(false);
       fetchData();  // Refresh data after submission
     } catch (error) {
@@ -87,6 +106,7 @@ export default function Home() {
     try {
       await deleteDoc(doc(db, "submissions", id));
       setData((prevData) => prevData.filter((item) => item.id !== id));
+      setFilteredData((prevData) => prevData.filter((item) => item.id !== id)); // Update filtered data
       setSuccess("Document deleted successfully!");
     } catch (error) {
       console.error("Error deleting document:", error);
@@ -95,10 +115,16 @@ export default function Home() {
   };
 
   // Handle card editing
-  const handleEdit = (item) => {
-    setIsEditing(true);
-    setCurrentItem(item);
-    setShowModal(true);
+  const handleEdit = (formData) => {
+    // If there's no currentItem, it means we're adding a new customer
+    if (!currentItem) {
+      console.log("Adding new customer", formData);
+      // Call a function to add new customer logic if needed
+    } else {
+      setIsEditing(true);
+      setCurrentItem(currentItem);
+      setShowModal(true);
+    }
   };
 
   const generateGoogleMapsLink = (address) => {
@@ -112,14 +138,34 @@ export default function Home() {
       {error && <p className="text-red-500">{error}</p>}
       {success && <p className="text-green-500">{success}</p>}
 
+      {/* Top buttons for adding new customer and filtering */}
+      <div className="flex justify-between mb-4">
+        <Button 
+          onClick={() => {
+            console.log("Add Customer Button Clicked"); // Debugging statement
+            setIsEditing(false);
+            setCurrentItem(null);
+            setShowModal(true);
+          }} 
+          className="bg-black text-white">
+          +
+        </Button>
+
+        <Button 
+          onClick={() => setShowFilterSortModal(true)} 
+          className="bg-gray-200 text-black">
+          Filter and Sort
+        </Button>
+      </div>
+
       <div className="grid gap-2 mb-8">
-        {data.length > 0 ? (
-          data.map((item) => (
+        {filteredData.length > 0 ? (
+          filteredData.map((item) => (
             <CardComponent
               key={item.id}
               item={item}
               handleDelete={handleDelete}
-              handleEdit={handleEdit}
+              handleEdit={handleEdit} // Pass handleEdit function
               generateGoogleMapsLink={generateGoogleMapsLink}
             />
           ))
@@ -128,22 +174,26 @@ export default function Home() {
         )}
       </div>
 
-      {/* Button to open the modal for adding new submission */}
-      <Button onClick={() => {
-        setIsEditing(false);
-        setCurrentItem(null);
-        setShowModal(true);
-      }} className="bg-black text-white mb-4">
-        Legg til ny kunde
-      </Button>
-
       {/* Modal for adding/updating submissions */}
-      <ModalComponent showModal={showModal} setShowModal={setShowModal}>
+      <ModalComponent 
+        item={currentItem} // Pass currentItem to the modal
+        showModal={showModal} 
+        handleDelete={handleDelete} 
+        handleEdit={handleEdit} 
+        closeModal={() => setShowModal(false)}
+      >
         <FormComponent
           handleSubmit={handleSubmit}
           initialData={isEditing && currentItem ? currentItem : {}} // Pre-fill form if editing
         />
       </ModalComponent>
+
+      {/* Filter and Sort Modal */}
+      <FilterSortModal
+        show={showFilterSortModal}
+        onClose={() => setShowFilterSortModal(false)}
+        onApply={handleFilterAndSort}
+      />
     </div>
   );
 }
