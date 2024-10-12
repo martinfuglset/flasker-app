@@ -1,5 +1,14 @@
+// index.js
 import { useEffect, useState, useRef } from "react";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  Timestamp,
+} from "firebase/firestore";
 import { db } from "../lib/firebase";
 import CardComponent from "@/components/CardComponent";
 import FormComponent from "@/components/FormComponent";
@@ -11,48 +20,51 @@ export default function Home() {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [showFilterPopover, setShowFilterPopover] = useState(false); // New state for popover visibility
-  const [filterMode, setFilterMode] = useState(null); // Filter state ("Må hentes", "Må ikke hentes", or null for no filter)
-  const [sortOrder, setSortOrder] = useState(null); // Sorting state (asc or desc by name)
+  const [showFilterPopover, setShowFilterPopover] = useState(false);
+  const [filterMode, setFilterMode] = useState(null); // Filter state
+  const [sortOrder, setSortOrder] = useState(null); // Sorting state
   const [isEditing, setIsEditing] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
   const popoverRef = useRef(null); // Ref for the popover
 
-  // Define fetchData function so it can be called from anywhere
+  // Fetch data from Firestore
   const fetchData = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "submissions"));
-      const fetchedData = querySnapshot.docs.map((doc) => {
-        const docData = doc.data();
-        if (docData.sist_hentet && docData.sist_hentet.seconds) {
-          docData.sist_hentet = new Date(docData.sist_hentet.seconds * 1000).toISOString().split('T')[0]; // Ensure consistent YYYY-MM-DD format
+      const fetchedData = querySnapshot.docs.map((docSnapshot) => {
+        const docData = docSnapshot.data();
+        if (docData.sist_hentet && docData.sist_hentet.toDate) {
+          docData.sist_hentet = docData.sist_hentet
+            .toDate()
+            .toISOString()
+            .split("T")[0];
         }
-        return { id: doc.id, ...docData };
+        return { id: docSnapshot.id, ...docData };
       });
-  
+
       setData(fetchedData);
-      setFilteredData(fetchedData); // Initialize the filtered data
+
+      // After fetching data, reapply any filters that are active
+      applyFiltersAndSort(fetchedData);
     } catch (error) {
       console.error("Error fetching Firestore data:", error);
     }
   };
-  
 
-  // Fetch data on component mount
   useEffect(() => {
-    fetchData();
+    fetchData(); // Fetch data when the component mounts
   }, []);
 
-  // Filter and sort functionality
-  const handleFilterAndSort = () => {
-    let updatedData = [...data];
+  // Apply filter and sort functionality based on active settings
+  const applyFiltersAndSort = (dataToFilter = data) => {
+    let updatedData = [...dataToFilter];
 
-    // Sort data based on the selected order
+    // Apply sort
     if (sortOrder) {
       updatedData.sort((a, b) => {
         const nameA = a.name.toLowerCase();
         const nameB = b.name.toLowerCase();
-        if (sortOrder === 'asc') {
+        if (sortOrder === "asc") {
           return nameA.localeCompare(nameB);
         } else {
           return nameB.localeCompare(nameA);
@@ -60,15 +72,21 @@ export default function Home() {
       });
     }
 
-    // Apply "Må hentes" or "Må ikke hentes" filtering
+    // Apply filters
     if (filterMode === "må_hentes") {
       updatedData = updatedData.filter((item) => {
-        const daysDifference = Math.floor((new Date().getTime() - new Date(item.sist_hentet).getTime()) / (1000 * 60 * 60 * 24));
+        const daysDifference = Math.floor(
+          (new Date().getTime() - new Date(item.sist_hentet).getTime()) /
+            (1000 * 60 * 60 * 24)
+        );
         return daysDifference >= item.interval;
       });
     } else if (filterMode === "må_ikke_hentes") {
       updatedData = updatedData.filter((item) => {
-        const daysDifference = Math.floor((new Date().getTime() - new Date(item.sist_hentet).getTime()) / (1000 * 60 * 60 * 24));
+        const daysDifference = Math.floor(
+          (new Date().getTime() - new Date(item.sist_hentet).getTime()) /
+            (1000 * 60 * 60 * 24)
+        );
         return daysDifference < item.interval;
       });
     }
@@ -76,9 +94,14 @@ export default function Home() {
     setFilteredData(updatedData); // Update the filtered data
   };
 
-  const handleSubmit = async (e, formData) => {
-    e.preventDefault();
+  // Handle form submission for add/edit
+  const handleSubmit = async (formData) => {
     try {
+      // Convert 'sist_hentet' from 'YYYY-MM-DD' string to Timestamp
+      const formattedSistHentet = formData.sist_hentet
+        ? Timestamp.fromDate(new Date(formData.sist_hentet))
+        : null;
+
       if (isEditing && currentItem) {
         // Update an existing submission
         const docRef = doc(db, "submissions", currentItem.id);
@@ -88,7 +111,7 @@ export default function Home() {
           phone: formData.phone,
           region: formData.region,
           interval: parseInt(formData.interval),
-          sist_hentet: formData.sist_hentet, // Update the last picked up date
+          sist_hentet: formattedSistHentet, // Use Timestamp
         });
       } else {
         // Add a new submission
@@ -98,59 +121,33 @@ export default function Home() {
           phone: formData.phone,
           region: formData.region,
           interval: parseInt(formData.interval),
-          sist_hentet: formData.sist_hentet, // Set the last picked up date
+          sist_hentet: formattedSistHentet, // Use Timestamp
         });
       }
-  
+
       setShowModal(false); // Close the modal after submission
       setIsEditing(false);
-      fetchData(); // Refresh data after submission
+      await fetchData(); // Refresh data to reflect the changes
     } catch (error) {
       console.error("Error saving document:", error.message);
     }
   };
-  
 
+  // Handle deletion of a submission
   const handleDelete = async (id) => {
     try {
       await deleteDoc(doc(db, "submissions", id));
-      setData((prevData) => prevData.filter((item) => item.id !== id));
-      setFilteredData((prevData) => prevData.filter((item) => item.id !== id)); // Update filtered data
+      await fetchData(); // Refresh data after deletion
+      setShowModal(false); // Close modal after deletion
     } catch (error) {
       console.error("Error deleting document:", error);
     }
   };
 
-  const handleEdit = async (formData) => {
-    if (currentItem) {
-      try {
-        const docRef = doc(db, "submissions", currentItem.id);
-        await updateDoc(docRef, {
-          name: formData.name,
-          address: formData.address,
-          phone: formData.phone,
-          region: formData.region,
-          interval: parseInt(formData.interval),
-          sist_hentet: formData.sist_hentet ? new Date(formData.sist_hentet) : null, // Convert string to Date
-        });
-        setShowModal(false); // Close modal after editing
-        fetchData(); // Refresh the data
-      } catch (error) {
-        console.error("Error updating document:", error.message);
-      }
-    }
-  };
-  
-
   const handleCardClick = (item) => {
-    setCurrentItem(item);  // Set the current item to be edited
-    setIsEditing(true);    // Indicate that we're in editing mode
-    setShowModal(true);    // Show the modal
-  };
-
-  const generateGoogleMapsLink = (address) => {
-    const query = encodeURIComponent(address);
-    return `https://www.google.com/maps/search/?api=1&query=${query}`;
+    setCurrentItem(item); // Set the current item to be edited
+    setIsEditing(true); // Indicate that we're in editing mode
+    setShowModal(true); // Show the modal
   };
 
   // Function to toggle popover visibility
@@ -158,13 +155,13 @@ export default function Home() {
     setShowFilterPopover(!showFilterPopover);
   };
 
-  // Function to apply filter and sort options from popover
+  // Apply filter and sort options from popover
   const applyFilterAndSort = () => {
-    handleFilterAndSort();
+    applyFiltersAndSort();
     setShowFilterPopover(false); // Close popover after applying
   };
 
-  // Function to reset the filter (show all)
+  // Reset the filter (show all)
   const resetFilter = () => {
     setFilterMode(null); // Remove the filter mode
     setFilteredData(data); // Reset to show all data
@@ -192,9 +189,9 @@ export default function Home() {
         <div className="flex space-x-2 relative">
           <Button
             onClick={() => {
-              setIsEditing(false);  // Indicate this is a new entry
-              setCurrentItem(null);  // Reset current item
-              setShowModal(true);    // Show modal for adding new entry
+              setIsEditing(false); // Indicate this is a new entry
+              setCurrentItem(null); // Reset current item
+              setShowModal(true); // Show modal for adding new entry
             }}
             className="bg-white text-black border border-[0.5px] border-gray-500 w-10 h-10 rounded-full flex items-center justify-center"
           >
@@ -211,7 +208,10 @@ export default function Home() {
 
           {/* Popover for filtering and sorting */}
           {showFilterPopover && (
-            <div ref={popoverRef} className="absolute top-12 right-0 z-10 bg-white shadow-lg border border-gray-300 rounded-md w-48 p-4">
+            <div
+              ref={popoverRef}
+              className="absolute top-12 right-0 z-10 bg-white shadow-lg border border-gray-300 rounded-md w-48 p-4"
+            >
               <div>
                 <p className="font-medium mb-2">Sort by</p>
                 <select
@@ -278,7 +278,6 @@ export default function Home() {
               item={item}
               onClickCard={handleCardClick} // Pass callback to handle card click
               handleDelete={handleDelete}
-              generateGoogleMapsLink={generateGoogleMapsLink}
             />
           ))
         ) : (
@@ -292,7 +291,6 @@ export default function Home() {
           item={currentItem}
           showModal={showModal}
           handleDelete={handleDelete}
-          handleEdit={handleEdit} // Add the correct handleEdit function here
           closeModal={() => setShowModal(false)} // Close modal function
         >
           <FormComponent
