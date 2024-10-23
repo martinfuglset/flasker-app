@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/Button";
 
-const FilterSortModal = ({ show, onClose, onApply }) => {
+const FilterSortModal = ({ show, onClose, onApply, regions }) => {
   const [filterName, setFilterName] = useState('');
+  const [filterRegion, setFilterRegion] = useState(''); // New filter for region
   const [sortOrder, setSortOrder] = useState('asc'); // Default sorting order
+  const [sortField, setSortField] = useState('name'); // Default sorting by name
+  const [filterSistHentet, setFilterSistHentet] = useState(''); // New filter for sist hentet
 
   const handleApply = () => {
-    onApply(filterName, sortOrder);
+    // Passing multiple filter and sort criteria
+    onApply({
+      filterName,
+      filterRegion,
+      filterSistHentet,
+      sortOrder,
+      sortField,
+    });
     onClose();
   };
 
@@ -17,6 +27,7 @@ const FilterSortModal = ({ show, onClose, onApply }) => {
       <div className="bg-white p-6 rounded-md shadow-lg w-96">
         <h2 className="text-xl font-semibold mb-4">Filter and Sort</h2>
 
+        {/* Filter by Name */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">Filter by Name:</label>
           <input
@@ -27,6 +38,49 @@ const FilterSortModal = ({ show, onClose, onApply }) => {
           />
         </div>
 
+        {/* Filter by Region */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">Filter by Region:</label>
+          <select
+            value={filterRegion}
+            onChange={(e) => setFilterRegion(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+          >
+            <option value="">All Regions</option>
+            {regions.map((region) => (
+              <option key={region} value={region}>
+                {region}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Filter by Sist Hentet */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">Filter by Sist Hentet:</label>
+          <input
+            type="date"
+            value={filterSistHentet}
+            onChange={(e) => setFilterSistHentet(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+          />
+        </div>
+
+        {/* Sort Field */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">Sort By:</label>
+          <select
+            value={sortField}
+            onChange={(e) => setSortField(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+          >
+            <option value="name">Name</option>
+            <option value="region">Region</option>
+            <option value="sistHentet">Sist Hentet</option>
+          </select>
+        </div>
+
+        {/* Sort Order */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">Sort Order:</label>
           <select
@@ -39,17 +93,12 @@ const FilterSortModal = ({ show, onClose, onApply }) => {
           </select>
         </div>
 
+        {/* Action Buttons */}
         <div className="flex justify-between mt-6">
-          <Button
-            className="bg-gray-200 text-black"
-            onClick={onClose}
-          >
+          <Button className="bg-gray-200 text-black" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            className="bg-blue-600 text-white"
-            onClick={handleApply}
-          >
+          <Button className="bg-blue-600 text-white" onClick={handleApply}>
             Apply
           </Button>
         </div>
