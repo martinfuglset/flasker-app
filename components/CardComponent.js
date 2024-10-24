@@ -89,7 +89,7 @@ const CardComponent = ({ item, onClickCard, handleDelete, generateGoogleMapsLink
   return (
     <div
       key={item.id}
-      className="p-4 flex flex-col space-y-6 relative bg-gray-50 rounded-3xl cursor-pointer"
+      className="p-4 flex flex-col space-y-6 relative bg-gray-50 rounded-3xl cursor:pointer hover:bg-gray-100"
       onClick={() => onClickCard(item)} // Trigger callback to open the modal
     >
       {/* Row for Name, Phone, and Maps */}
